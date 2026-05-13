@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SUPERCAJA</title>
+    <link rel="icon" type="image/png" href="./favicon.png">
+    <link rel="stylesheet" href="main.css">
+    <style>
+      :root {
+        --glass-bg: rgba(255, 255, 255, 0.45);
+        --glass-bg-strong: rgba(255, 255, 255, 0.65);
+        --glass-border: rgba(255, 255, 255, 0.35);
+        --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        --text: #1c1c1e;
+        --text-secondary: #636366;
+        --accent: #007aff;
+        --accent-hover: #0051d5;
+        --radius: 20px;
+        --radius-sm: 14px;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        background: #f2f2f7;
+        color: var(--text);
+      }
+
+      /* ===== TOP BAR ===== */
+      .app-header {
+        position: fixed;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: var(--glass-bg-strong);
+        backdrop-filter: saturate(180%) blur(20px);
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 100px;
+        box-shadow: var(--glass-shadow);
+      }
+
+      .app-header h1 {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.3px;
+        margin-right: 8px;
+      }
+
+      .app-header .divider {
+        width: 1px;
+        height: 20px;
+        background: var(--glass-border);
+        opacity: 0.6;
+      }
+
+      .app-header label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 4px 10px;
+        border-radius: 100px;
+        transition: background 0.2s;
+      }
+
+      .app-header input[type="checkbox"] {
+        appearance: none;
+        width: 36px;
+        height: 20px;
+        background: rgba(120,120,128,0.16);
+        border-radius: 100px;
+        position: relative;
+        cursor: pointer;
+        transition: background 0.2s;
+        outline: none;
+      }
+
+      .app-header input[type="checkbox"]::after {
+        content: '';
+        position: absolute;
+        top: 2px; left: 2px;
+        width: 16px; height: 16px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        transition: transform 0.2s;
+      }
+
+      .app-header input[type="checkbox"]:checked { background: var(--accent); }
+      .app-header input[type="checkbox"]:checked::after { transform: translateX(16px); }
+
+      /* ===== LAYOUT ===== */
+      #layout {
+        display: flex;
+        height: 100vh;
+        position: relative;
+      }
+
+      #root {
+        flex: 1;
+        position: relative;
+      }
+
+      /* ===== OVERLAY - keep original structure for main.js ===== */
+      #overlay {
+        position: absolute !important;
+        top: 60px !important;
+        left: auto !important;
+        right: 12px !important;
+        bottom: 12px !important;
+        width: 280px !important;
+        height: auto !important;
+        z-index: 90;
+        display: flex;
+        flex-direction: column;
+        pointer-events: none;
+      }
+
+      #overlay > * { pointer-events: auto; }
+
+      .panel-glass {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--glass-bg);
+        backdrop-filter: saturate(180%) blur(24px);
+        -webkit-backdrop-filter: saturate(180%) blur(24px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius);
+        box-shadow: var(--glass-shadow);
+        overflow: hidden;
+      }
+
+      .panel-header {
+        padding: 14px 18px 10px;
+        border-bottom: 1px solid var(--glass-border);
+      }
+
+      .panel-header h2 {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.4px;
+      }
+
+      #paramsDiv {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px 16px;
+      }
+
+      /* ===== PROGRESS ===== */
+      #progress {
+        position: fixed !important;
+        top: 72px !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+        transform: translateX(-50%) !important;
+        z-index: 200;
+        padding: 6px 16px;
+        background: var(--glass-bg-strong);
+        backdrop-filter: saturate(180%) blur(20px);
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 100px;
+        box-shadow: var(--glass-shadow);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        pointer-events: none;
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      #progress * { pointer-events: auto; }
+      #progress progress { display: none; }
+      #progressText { display: inline; }
+
+      /* ===== ERROR ===== */
+      #error-bar {
+        position: fixed;
+        top: 72px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 200;
+        padding: 10px 20px;
+        background: rgba(255, 59, 48, 0.85);
+        backdrop-filter: saturate(180%) blur(20px);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 100px;
+        box-shadow: var(--glass-shadow);
+        font-size: 13px;
+        color: white;
+        display: none;
+        gap: 8px;
+        align-items: center;
+      }
+
+      #error-bar.visible { display: flex; }
+      #error-name { font-weight: 700; }
+
+      /* ===== MODEL OPTIONS (override main.css) ===== */
+      #model-options {
+        position: relative !important;
+        bottom: auto !important;
+        left: auto !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        max-height: none !important;
+        overflow: hidden !important;
+        z-index: auto !important;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .above-error {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Hide param buttons */
+      #paramsDiv .jscad-param-buttons { display: none !important; }
+
+      /* Hide scriptUrl export option */
+      #export-format option[value="scriptUrl"] { display: none; }
+
+      /* ===== SIDE PANEL (visibilidad + calidad) ===== */
+      #side-panel {
+        position: fixed;
+        bottom: 80px;
+        left: 20px;
+        width: 220px;
+        max-height: calc(50vh - 80px);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        background: var(--glass-bg);
+        backdrop-filter: saturate(180%) blur(24px);
+        -webkit-backdrop-filter: saturate(180%) blur(24px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius);
+        box-shadow: var(--glass-shadow);
+        overflow: hidden;
+        pointer-events: auto;
+      }
+
+      #side-panel .panel-header {
+        padding: 12px 16px 8px;
+        border-bottom: 1px solid var(--glass-border);
+      }
+
+      #side-panel .panel-header h2 {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+
+      #side-panel #sideParamsDiv {
+        overflow-y: auto;
+        padding: 10px 12px;
+      }
+
+      #side-panel .form-line {
+        background: var(--glass-bg-strong);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-sm);
+        margin-bottom: 6px;
+        padding: 6px 10px;
+      }
+
+      #side-panel .form-line[type="group"] {
+        background: var(--glass-bg);
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+
+      #side-panel .form-line[type="group"] label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      #side-panel .form-line label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        display: block;
+        margin-bottom: 3px;
+      }
+
+      #side-panel .form-line input[type="number"],
+      #side-panel .form-line select {
+        appearance: none;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid var(--glass-border);
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+        outline: none;
+        width: 100%;
+      }
+
+      #side-panel .form-line select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23636366' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 6px center;
+        padding-right: 22px;
+      }
+
+      /* ===== EXPORT FIXED BOTTOM LEFT ===== */
+      .export-fixed {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        background: var(--glass-bg-strong);
+        backdrop-filter: saturate(180%) blur(20px);
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-sm);
+        box-shadow: var(--glass-shadow);
+      }
+
+      .export-fixed select {
+        appearance: none;
+        background: transparent;
+        border: none;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text);
+        padding: 4px 24px 4px 4px;
+        outline: none;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23636366' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 4px center;
+      }
+
+      .export-fixed .divider-v {
+        width: 1px;
+        height: 24px;
+        background: var(--glass-border);
+        opacity: 0.6;
+      }
+
+      .export-fixed button {
+        appearance: none;
+        border: none;
+        background: var(--accent);
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 8px 18px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .export-fixed button:hover {
+        background: var(--accent-hover);
+        transform: scale(1.03);
+      }
+
+      /* ===== GIZMO ===== */
+      jscadui-gizmo {
+        position: absolute !important;
+        top: 80px !important;
+        right: 320px !important;
+        z-index: 80 !important;
+      }
+
+      /* ===== HIDE ORIGINALS ===== */
+      #welcome, #editor, #menu, #dropModal {
+        display: none !important;
+      }
+
+      /* ===== PARAMS STYLING (Liquid Glass) ===== */
+      #paramsDiv .form-line {
+        background: var(--glass-bg-strong);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-sm);
+        margin-bottom: 8px;
+        padding: 8px 12px;
+        transition: background 0.2s ease;
+      }
+
+      #paramsDiv .form-line:hover {
+        background: rgba(255, 255, 255, 0.75);
+      }
+
+      #paramsDiv .form-line[type="group"] {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-sm);
+        padding: 10px 12px;
+        margin-top: 4px;
+        margin-bottom: 4px;
+        cursor: pointer;
+      }
+
+      #paramsDiv .form-line[type="group"] label {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        text-transform: none;
+        letter-spacing: 0;
+        margin-bottom: 0;
+      }
+
+      #paramsDiv .form-line label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      #paramsDiv .form-line input[type="number"],
+      #paramsDiv .form-line select {
+        appearance: none;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+        outline: none;
+        width: 100%;
+        transition: border-color 0.2s, background 0.2s;
+      }
+
+      #paramsDiv .form-line input[type="number"]:focus,
+      #paramsDiv .form-line select:focus {
+        border-color: var(--accent);
+        background: rgba(255, 255, 255, 0.8);
+      }
+
+      #paramsDiv .form-line select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23636366' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        padding-right: 24px;
+      }
+
+      #paramsDiv .jscad-param-buttons {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--glass-border);
+      }
+
+      #paramsDiv .jscad-param-buttons button {
+        appearance: none;
+        border: none;
+        background: var(--glass-bg-strong);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      #paramsDiv .jscad-param-buttons button:hover {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+      }
+
+      /* ===== RESPONSIVE ===== */
+      @media (max-width: 768px) {
+        #overlay {
+          top: auto; right: 8px; bottom: 70px; left: 8px;
+          width: auto; height: 45vh;
+        }
+        jscadui-gizmo {
+          right: 20px !important;
+        }
+        .app-header {
+          left: 12px; right: 12px;
+          transform: none;
+          border-radius: var(--radius-sm);
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- App Header -->
+    <div class="app-header">
+      <h1>SUPERCAJA</h1>
+    </div>
+
+    <!-- Side Panel (visibilidad + calidad) -->
+    <div id="side-panel">
+      <div class="panel-header"><h2>Opciones</h2></div>
+      <div id="sideParamsDiv"></div>
+    </div>
+
+    <!-- Main Layout (exact structure main.js expects) -->
+    <div class="layout" id="layout">
+      <div id="root">
+        <div id="viewer"></div>
+      </div>
+
+      <div id="overlay">
+        <div class="above-error">
+          <div id="progress">
+            <div id="progressText">....</div>
+            <progress title="Processing..."></progress>
+          </div>
+
+          <div id="model-options">
+            <div class="panel-glass">
+              <div class="panel-header"><h2>Parámetros</h2></div>
+              <div id="paramsDiv"></div>
+            </div>
+            <div class="export-fixed">
+              <select id="export-format"></select>
+              <div class="divider-v"></div>
+              <button id="export-button">Exportar</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="error-bar">
+          <label id="error-name">Error:</label>
+          <span id="error-message"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden originals for main.js compatibility (keep full original DOM tree) -->
+    <div id="welcome" style="display:none">
+      <label><input type="checkbox" id="welcome-dismiss"></label>
+    </div>
+
+    <div id="editor" style="display:none">
+      <div id="editor-drawer">
+        <nav id="editor-nav">
+          <button id="editor-file"></button>
+          <ul id="editor-files"></ul>
+        </nav>
+        <div id="editor-container"></div>
+        <a id="editor-hint"></a>
+        <a id="editor-hint2"></a>
+      </div>
+      <div id="editor-toggle"></div>
+    </div>
+
+    <div id="menu" style="display:none">
+      <button id="menu-button"></button>
+      <div id="menu-content">
+        <ul id="examples"></ul>
+      </div>
+    </div>
+
+    <div id="dropModal" style="display:none"></div>
+
+    <!-- Hidden inputs required by viewState.js -->
+    <input type="checkbox" id="dark-mode" style="display:none">
+    <input type="checkbox" id="show-axis" style="display:none">
+    <input type="checkbox" id="show-grid" style="display:none">
+    <input type="checkbox" id="smooth-render" style="display:none">
+    <input type="checkbox" id="zoom-to-fit" style="display:none">
+
+    <script>
+      // Force axes and grid off by default
+      localStorage.setItem('engine.showAxis', 'false')
+      localStorage.setItem('engine.showGrid', 'false')
+
+      // Remove scriptUrl export option and select 3MF by default
+      const cleanExportFormat = () => {
+        const select = document.getElementById('export-format')
+        if (!select) return false
+        // Remove scriptUrl option
+        for (let i = select.options.length - 1; i >= 0; i--) {
+          if (select.options[i].value === 'scriptUrl') {
+            select.remove(i)
+          }
+        }
+        // Select 3MF
+        for (let i = 0; i < select.options.length; i++) {
+          if (select.options[i].value === '3mf') {
+            select.selectedIndex = i
+            return true
+          }
+        }
+        return false
+      }
+
+      if (!cleanExportFormat()) {
+        const observer = new MutationObserver(() => {
+          if (cleanExportFormat()) observer.disconnect()
+        })
+        const select = document.getElementById('export-format')
+        if (select) observer.observe(select, { childList: true })
+      }
+
+      // Move 'visibilidad' and 'calidad' groups to side panel
+      let isReordering = false
+      const reorderParams = () => {
+        const paramsDiv = document.getElementById('paramsDiv')
+        const sideParamsDiv = document.getElementById('sideParamsDiv')
+        if (!paramsDiv || !sideParamsDiv || isReordering) return
+        isReordering = true
+
+        let visGroup = null, calGroup = null
+        let visFields = [], calFields = []
+        let collectingVis = false, collectingCal = false
+
+        // Find the groups and their fields in paramsDiv
+        Array.from(paramsDiv.children).forEach(child => {
+          if (child.getAttribute('type') === 'group') {
+            const name = child.getAttribute('name')
+            if (name === 'visibilidad') {
+              visGroup = child
+              collectingVis = true
+              collectingCal = false
+            } else if (name === 'calidad') {
+              calGroup = child
+              collectingVis = false
+              collectingCal = true
+            } else {
+              collectingVis = false
+              collectingCal = false
+            }
+          } else if (collectingVis) {
+            visFields.push(child)
+          } else if (collectingCal) {
+            calFields.push(child)
+          }
+        })
+
+        // Move them to side panel
+        if (visGroup) {
+          sideParamsDiv.appendChild(visGroup)
+          visFields.forEach(f => sideParamsDiv.appendChild(f))
+        }
+        if (calGroup) {
+          sideParamsDiv.appendChild(calGroup)
+          calFields.forEach(f => sideParamsDiv.appendChild(f))
+        }
+
+        isReordering = false
+      }
+
+      // Watch for paramsDiv changes and reorder
+      const paramsObserver = new MutationObserver((mutations) => {
+        const paramsDiv = document.getElementById('paramsDiv')
+        if (paramsDiv && paramsDiv.children.length > 2 && !isReordering) {
+          // Small delay to let main.js finish rendering
+          setTimeout(reorderParams, 50)
+        }
+      })
+
+      const paramsDiv = document.getElementById('paramsDiv')
+      if (paramsDiv) {
+        paramsObserver.observe(paramsDiv, { childList: true })
+      }
+    </script>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
